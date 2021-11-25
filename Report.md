@@ -67,7 +67,7 @@ actor_loss = -self.critic_local(states.flatten(),actions_pred.flatten()).mean()
 ```
 
 **Mods to stabilize Training**
-We are using fixed target learning with soft updates. i.e *_target and *_local are networks with exactly same structure. *_target is technically an interpolated version of *_local from previous iterations. This is done S.T we can have a more stable learning to prevent <em>moving target</em> problem and stabilize training. 
+We are using fixed target learning with soft updates. i.e *_target and *_local are networks with exactly same structure. *_target is technically an interpolated version of *_local from previous iterations. This is done S.T we can have a more stable learning to prevent <em>moving target</em> problem and stabilize training. Moreover we also add some scaling to the noise S.T at later time in training, as our network gets better, we will rely lesser and lesser on the noise.
 
 We are also only updating after certain time steps, and during that time step we learn multiple times. This is also to stabilize training.
 
@@ -77,14 +77,17 @@ Model/Agent Parameters:
 ```bash
 BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 256         # minibatch size
-GAMMA = 0.995            # discount factor
+GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR_ACTOR = 1e-3         # learning rate of the actor
-LR_CRITIC = 1e-3        # learning rate of the critic
+LR_CRITIC = 1e-4        # learning rate of the critic
 WEIGHT_DECAY = 0.0      # L2 weight decay
 
-N_LEARN_UPDATES = 3     # number of learning updates
-N_TIME_STEPS = 5       # every n time step do update```
+N_LEARN_UPDATES = 10     # number of learning updates
+N_TIME_STEPS = 20       # every n time step do update
+
+EPSILON_MIN = 0.01      # Minimum scaling to noise
+EPSILON_MAX_STEPS = 1e6 # Number of learn iteration before minimum noise scale
 ```
 
 Runtime parameters:
@@ -122,11 +125,20 @@ The important factor is it takes in (num of agent * (state size + action size) i
 
 ### Results
 Here is the results of training and playing with the environment. the x-axis represent number of episodes, the y-axis represent score/rewards per episode.
-![alt text](maddpg_rewards.png "Training Plot")
-
+<br/><br/>
+![alt text](media/maddpg_rewards.png "Training Plot")
+<br/><br/>
+Here is the moving average, the x-axis represent number of episodes, the y-axis represent current score average over last 100 episodes.
+<br/><br/>
+![alt text](media/maddpg_moving_average.png "Moving Average")
+<br/><br/>
+Here is the training log:
+<br/><br/>
+<img src="media/maddpg_training_log.png" alt="Training Log" width="400"/>
+<br/><br/>
 
 ### Future work
 To further improve on our current implementation We can implement:
-- Implement Priortized Experience Replay/Weighted sampling for each DDPG Agent learning
+- Implement Priortized Experience Replay/Weighted sampling for DDPG
 - Using only different heads(i.e final few layers) for actor and critic for more performance
-- Use more than TD-0[current_reward + critic(next_state,next_action)] (i.e TD-n step, or GAE) for the loss function of each DDPG's critic.
+- Use more than TD-0[current_reward + critic(next_state,next_action)] (i.e TD-n step, or GAE) for the loss function of DDPG's critic.
